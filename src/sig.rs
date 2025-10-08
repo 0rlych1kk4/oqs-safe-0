@@ -62,8 +62,8 @@ impl Signature {
 
 pub trait SignatureScheme {
     fn keypair() -> Result<(PublicKey, SecretKey), OqsError>;
-    fn sign(sk: &SecretKey, msg: &[u8]) -> Result<Signature, OqsError>;
-    fn verify(pk: &PublicKey, msg: &[u8], sig: &Signature) -> Result<(), OqsError>;
+    fn sign(_sk: &SecretKey, _msg: &[u8]) -> Result<Signature, OqsError>;
+    fn verify(_pk: &PublicKey, _msg: &[u8], sig: &Signature) -> Result<(), OqsError>;
 }
 
 pub struct Dilithium2;
@@ -86,10 +86,10 @@ impl SignatureScheme for Dilithium2 {
         }
     }
 
-    fn sign(sk: &SecretKey, msg: &[u8]) -> Result<Signature, OqsError> {
+    fn sign(_sk: &SecretKey, _msg: &[u8]) -> Result<Signature, OqsError> {
         #[cfg(feature = "liboqs")]
         {
-            crate::ffi::dilithium2_sign(sk.as_bytes(), msg).map(Signature)
+            crate::ffi::dilithium2_sign(_sk.as_bytes(), _msg).map(Signature)
         }
         #[cfg(not(feature = "liboqs"))]
         {
@@ -99,10 +99,10 @@ impl SignatureScheme for Dilithium2 {
         }
     }
 
-    fn verify(pk: &PublicKey, msg: &[u8], sig: &Signature) -> Result<(), OqsError> {
+    fn verify(_pk: &PublicKey, _msg: &[u8], sig: &Signature) -> Result<(), OqsError> {
         #[cfg(feature = "liboqs")]
         {
-            crate::ffi::dilithium2_verify(pk.as_bytes(), msg, sig.as_bytes())
+            crate::ffi::dilithium2_verify(_pk.as_bytes(), _msg, sig.as_bytes())
         }
         #[cfg(not(feature = "liboqs"))]
         {
