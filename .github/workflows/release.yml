@@ -2,50 +2,69 @@
 name: Release
 
 on:
-  workflow_dispatch: {}
   push:
-    tags:
-      - "v*.*.*"   # publish only on version tags
-
-# avoid duplicate publishes on rapid re-tags
-concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
-
-env:
-  CARGO_TERM_COLOR: always
-  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+  pull_request:
 
 jobs:
-  # Fast sanity tests without liboqs
-  tests:
-    name: Mock tests (no liboqs)
+  mock-linux:
     runs-on: ubuntu-22.04
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/cache@v4
+      - run: cargo test --no-default-features --features kyber768,dilithium2
+
+  liboqs-ubuntu:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache Cargo
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-mock-${{ hashFiles('**/Cargo.lock') }}
-      - run: cargo test --no-default-features --features kyber768,dilithium2
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Build & install liboqs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build cmake pkg-config libssl-dev
+          git clone --depth 1 https://github.com/open-quantum-safe/liboqs
+          cd liboqs && mkdir build && cd build
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DOQS_DIST_BUILD=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=$HOME/.local/liboqs ..
+          ninja && ninja install
+          PKG_CONFIG_PATH="$HOME/.local/liboqs/lib/pkgconfig" pkg-config --modversion liboqs
+      - name: Test (real liboqs)
+        env:
+          LIBOQS_DIR: ${{ runner.home }}/.local/liboqs
+          PKG_CONFIG_PATH: ${{ runner.home }}/.local/liboqs/lib/pkgconfig
+          LD_LIBRARY_PATH: ${{ runner.home }}/.local/liboqs/lib
+        run: |
+          cargo test --no-default-features --features liboqs,kyber768,dilithium2
+          cargo run --example kem_roundtrip --no-default-features --features liboqs,kyber768
+          cargo run --example dsa_sign_verify --no-default-features --features liboqs,dilithium2
 
-  publish:
-    name: Publish to crates.io
-    runs-on: ubuntu-22.04
-    needs: [tests]
-    if: startsWith(github.ref, 'refs/tags/v')
-    # OIDC for Trusted Publishing
-    permissions:
-      contents: read
-      id-token: write
+  liboqs-macos:
+    runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Publish (OIDC trusted)
-        run: cargo publish --locked
+      - name: Build & install liboqs
+        run: |
+          brew install ninja cmake pkg-config openssl@3
+          git clone --depth 1 https://github.com/open-quantum-safe/liboqs
+          cd liboqs && mkdir build && cd build
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DOQS_DIST_BUILD=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=$HOME/.local/liboqs -DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3) ..
+          ninja && ninja install
+          PKG_CONFIG_PATH="$HOME/.local/liboqs/lib/pkgconfig" pkg-config --modversion liboqs
+      - name: Test (real liboqs)
+        env:
+          LIBOQS_DIR: ${{ runner.home }}/.local/liboqs
+          PKG_CONFIG_PATH: ${{ runner.home }}/.local/liboqs/lib/pkgconfig
+          DYLD_LIBRARY_PATH: ${{ runner.home }}/.local/liboqs/lib
+        run: |
+          cargo test --no-default-features --features liboqs,kyber768,dilithium2
+          cargo run --example kem_roundtrip --no-default-features --features liboqs,kyber768
+          cargo run --example dsa_sign_verify --no-default-features --features liboqs,dilithium2
+
