@@ -4,46 +4,60 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 authors = ["Orlando Trajano <orlychikka@gmail.com>"]
-repository = "https://github.com/0rlych1kk4/oqs-safe"
+repository = "https://github.com/0rlych1kk4/oqs-safe-0"
 documentation = "https://docs.rs/oqs-safe"
 readme = "README.md"
-categories = ["cryptography", "api-bindings", "external-ffi-bindings"]
+categories = ["cryptography", "api-bindings"]
 keywords = ["post-quantum", "pqc", "kyber", "dilithium", "liboqs"]
 description = "Safe, minimal Rust wrapper over libOQS for PQ KEM/SIG (Kyber/ML-KEM, Dilithium/ML-DSA) with mock fallback."
 
+# Ship only crate-relevant files to crates.io (keeps tarball tiny, excludes vendored liboqs/)
+include = [
+  "src/**",
+  "examples/**",
+  "tests/**",
+  "Cargo.toml",
+  "Cargo.lock",
+  "build.rs",
+  "README.md",
+  "CHANGELOG.md",
+  "SECURITY.md",
+  "LICENSE-MIT",
+  "LICENSE-APACHE",
+  ".github/workflows/ci.yml",
+]
+
 [dependencies]
-# was: zeroize = "1"
 zeroize = { version = "1", features = ["derive"] }
-# was: rand_core = "0.6"
 rand_core = { version = "0.6", features = ["getrandom"] }
 getrandom = "0.2"
-subtle = "2"
+subtle   = "2"
 
 [build-dependencies]
 pkg-config = "0.3"
-cc = "1"  # not strictly required; useful if you later ship C stubs
+cc = "1" # optional but handy if you add C stubs later
 
 [features]
 # Backends:
 default = []
 liboqs = []   # enable real liboqs FFI path
 
-# Feature flags per algorithm family (used for gating APIs if desired).
-kyber768 = []
-kyber1024 = []
+# Algorithms (gate APIs if desired)
+kyber768   = []
+kyber1024  = []
 dilithium2 = []
 dilithium3 = []
 dilithium5 = []
 
 # NIST/ML aliases for adoption ergonomics
 ml_kem_768 = ["kyber768"]
-ml_dsa_44  = ["dilithium2"]         # maps to Dilithium2 on older liboqs, ML-DSA-44 on newer
+ml_dsa_44  = ["dilithium2"]  # Dilithium2 (older liboqs) / ML-DSA-44 (newer)
 
 [dev-dependencies]
-hex = "0.4"
+hex  = "0.4"
 rand = "0.8"
 
 [package.metadata.docs.rs]
-features = ["kyber768", "dilithium2"]          # show algo APIs on docs.rs build
-rustdoc-args = ["--cfg", "docsrs"]
+features = ["kyber768", "dilithium2"]   # show algo APIs on docs.rs build
 no-default-features = true
+rustdoc-args = ["--cfg", "docsrs"]
