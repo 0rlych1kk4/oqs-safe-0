@@ -30,6 +30,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build cmake pkg-config libssl-dev
+          rm -rf liboqs
           git clone --depth 1 https://github.com/open-quantum-safe/liboqs
           cd liboqs && mkdir build && cd build
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DOQS_DIST_BUILD=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=$HOME/.local/liboqs ..
@@ -51,6 +52,7 @@ jobs:
       - name: Build & install liboqs
         run: |
           brew install ninja cmake pkg-config openssl@3
+          rm -rf liboqs
           git clone --depth 1 https://github.com/open-quantum-safe/liboqs
           cd liboqs && mkdir build && cd build
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DOQS_DIST_BUILD=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=$HOME/.local/liboqs -DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3) ..
