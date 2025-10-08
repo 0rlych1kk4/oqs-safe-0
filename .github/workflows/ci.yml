@@ -1,14 +1,4 @@
-
----
-
-# 5) CI: GitHub Actions (`.github/workflows/ci.yml`)
-
-This runs:
-- **Mock** (no liboqs) on ubuntu
-- **Real liboqs** on ubuntu + macOS (builds liboqs from source)
-- **Examples** and **tests** with feature matrix
-
-```yaml
+# SPDX-License-Identifier: MIT OR Apache-2.0
 name: CI
 
 on:
@@ -28,9 +18,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Build & install liboqs
         run: |
-          sudo apt-get update && sudo apt-get install -y ninja-build cmake pkg-config libssl-dev
+          sudo apt-get update
+          sudo apt-get install -y ninja-build cmake pkg-config libssl-dev
           git clone --depth 1 https://github.com/open-quantum-safe/liboqs
           cd liboqs && mkdir build && cd build
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DOQS_DIST_BUILD=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=$HOME/.local/liboqs ..
