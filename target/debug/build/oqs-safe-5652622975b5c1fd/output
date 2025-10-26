@@ -1,0 +1,4 @@
+cargo:rerun-if-env-changed=LIBOQS_DIR
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH
+cargo:rustc-cfg=oqs_build_script
+cargo:links=oqs
