@@ -4,7 +4,7 @@
 [![Release](https://img.shields.io/github/v/release/0rlych1kk4/oqs-safe-0?sort=semver)](https://github.com/0rlych1kk4/oqs-safe-0/releases)
 [![Docs.rs](https://docs.rs/oqs-safe/badge.svg)](https://docs.rs/oqs-safe)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE-MIT)  
-[![Build](https://github.com/0rlych1kk4/oqs-safe-0/actions/workflows/ci.yml/badge.svg)](https://github.com/0rlych1kk4/oqs-safe-0/actions)
+[![CI](https://github.com/0rlych1kk4/oqs-safe-0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/0rlych1kk4/oqs-safe-0/actions/workflows/ci.yml)
 
 **oqs-safe** is a stable, minimal **safe Rust wrapper** over [libOQS] for NIST Post-Quantum Cryptography (PQC):
 
