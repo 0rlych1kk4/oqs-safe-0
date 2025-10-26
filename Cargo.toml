@@ -12,6 +12,22 @@ keywords = ["post-quantum", "pqc", "kyber", "dilithium", "liboqs"]
 description = "Stable, minimal, safe Rust wrapper over libOQS for PQ KEM/SIG (ML-KEM/Dilithium) with explicit mock-only dev mode."
 # Helps cargo coordinate native linking
 links = "oqs"
+exclude = [
+    "target/*",
+    "liboqs/*",
+    "tests/*",
+    "examples/*",
+    ".github/*",
+    "*.dSYM",
+    "*.DS_Store",
+    "*.zip",
+    "*.tar*",
+    "*.gz",
+    "*.pdf",
+    "*.png",
+    "*.jpg",
+    "*.jpeg",
+]
 
 [badges]
 crates-io = { repository = "https://crates.io/crates/oqs-safe" }
