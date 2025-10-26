@@ -12,3 +12,4 @@ AI_Simulation_Memory_Lab/
 **/liboqs/*.dylib
 **/liboqs/*.so
 **/liboqs/*.dll
+oqs-safe-0/liboqs/

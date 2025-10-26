@@ -1,0 +1,30 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-mock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --features mock,kyber768,dilithium2
+      - run: cargo test  --features mock,kyber768,dilithium2
+
+  test-liboqs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install liboqs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libssl-dev pkg-config
+          git clone --depth 1 https://github.com/open-quantum-safe/liboqs
+          cd liboqs && mkdir build && cd build
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DOQS_DIST_BUILD=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=$HOME/.local/liboqs ..
+          ninja && ninja install
+          echo "LIBOQS_DIR=$HOME/.local/liboqs" >> $GITHUB_ENV
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --features liboqs,kyber768,dilithium2,strict
+      - run: cargo test  --features liboqs,kyber768,dilithium2
