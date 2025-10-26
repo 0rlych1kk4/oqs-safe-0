@@ -1,1 +1,14 @@
 /target
+# Ignore the embedded repo
+AI_Simulation_Memory_Lab/
+
+# Usual Rust/build ignores (helps keep the repo clean)
+**/target/
+**/.DS_Store
+**/*.swp
+**/Cargo.lock
+**/liboqs/build/
+**/liboqs/install/
+**/liboqs/*.dylib
+**/liboqs/*.so
+**/liboqs/*.dll
