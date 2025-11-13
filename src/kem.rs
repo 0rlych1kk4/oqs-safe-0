@@ -34,24 +34,60 @@ pub struct Ciphertext(pub(crate) Vec<u8>);
 pub struct SharedSecret(pub(crate) Vec<u8>);
 
 impl PublicKey {
-    #[inline] pub fn as_bytes(&self) -> &[u8] { &self.0 }
-    #[inline] pub fn len(&self) -> usize { self.0.len() }
-    #[inline] pub fn is_empty(&self) -> bool { self.0.is_empty() }
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 impl SecretKey {
-    #[inline] pub fn as_bytes(&self) -> &[u8] { &self.0 }
-    #[inline] pub fn len(&self) -> usize { self.0.len() }
-    #[inline] pub fn is_empty(&self) -> bool { self.0.is_empty() }
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 impl Ciphertext {
-    #[inline] pub fn as_bytes(&self) -> &[u8] { &self.0 }
-    #[inline] pub fn len(&self) -> usize { self.0.len() }
-    #[inline] pub fn is_empty(&self) -> bool { self.0.is_empty() }
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 impl SharedSecret {
-    #[inline] pub fn as_bytes(&self) -> &[u8] { &self.0 }
-    #[inline] pub fn len(&self) -> usize { self.0.len() }
-    #[inline] pub fn is_empty(&self) -> bool { self.0.is_empty() }
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 /// KEM trait
@@ -94,7 +130,7 @@ impl Kem for Kyber768 {
                 return Err(OqsError::InvalidLength);
             }
             let mut ct = vec![0u8; 1088]; // Kyber768 ct size
-            let mut ss = vec![0u8; 32];   // Shared secret size (bytes)
+            let mut ss = vec![0u8; 32]; // Shared secret size (bytes)
             OsRng.fill_bytes(&mut ct);
             OsRng.fill_bytes(&mut ss);
             Ok((Ciphertext(ct), SharedSecret(ss)))
@@ -122,15 +158,21 @@ impl Kem for Kyber768 {
 #[cfg(feature = "testing")]
 impl PublicKey {
     /// Construct without size checks (tests only).
-    pub fn from_bytes_unchecked(bytes: Vec<u8>) -> Self { Self(bytes) }
+    pub fn from_bytes_unchecked(bytes: Vec<u8>) -> Self {
+        Self(bytes)
+    }
 }
 #[cfg(feature = "testing")]
 impl SecretKey {
     /// Construct without size checks (tests only).
-    pub fn from_bytes_unchecked(bytes: Vec<u8>) -> Self { Self(bytes) }
+    pub fn from_bytes_unchecked(bytes: Vec<u8>) -> Self {
+        Self(bytes)
+    }
 }
 #[cfg(feature = "testing")]
 impl Ciphertext {
     /// Construct without size checks (tests only).
-    pub fn from_bytes_unchecked(bytes: Vec<u8>) -> Self { Self(bytes) }
+    pub fn from_bytes_unchecked(bytes: Vec<u8>) -> Self {
+        Self(bytes)
+    }
 }

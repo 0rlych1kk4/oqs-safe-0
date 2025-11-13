@@ -15,12 +15,8 @@ extern "C" {
     fn OQS_KEM_free(kem: *mut OQS_KEM);
     fn OQS_KEM_keypair(kem: *const OQS_KEM, pub_key: *mut u8, sec_key: *mut u8) -> c_int;
     fn OQS_KEM_encaps(kem: *const OQS_KEM, ct: *mut u8, ss: *mut u8, pub_key: *const u8) -> c_int;
-    fn OQS_KEM_decaps(
-        kem: *const OQS_KEM,
-        ss: *mut u8,
-        ct: *const u8,
-        sec_key: *const u8,
-    ) -> c_int;
+    fn OQS_KEM_decaps(kem: *const OQS_KEM, ss: *mut u8, ct: *const u8, sec_key: *const u8)
+        -> c_int;
 
     // ---- Generic SIG factory + ops ----
     fn OQS_SIG_new(method_name: *const c_char) -> *mut OQS_SIG;

@@ -24,19 +24,46 @@ pub struct Signature(pub(crate) Vec<u8>);
 
 // ---- Read-only accessors ----
 impl PublicKey {
-    #[inline] pub fn as_bytes(&self) -> &[u8] { &self.0 }
-    #[inline] pub fn len(&self) -> usize { self.0.len() }
-    #[inline] pub fn is_empty(&self) -> bool { self.0.is_empty() }
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 impl SecretKey {
-    #[inline] pub fn as_bytes(&self) -> &[u8] { &self.0 }
-    #[inline] pub fn len(&self) -> usize { self.0.len() }
-    #[inline] pub fn is_empty(&self) -> bool { self.0.is_empty() }
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 impl Signature {
-    #[inline] pub fn as_bytes(&self) -> &[u8] { &self.0 }
-    #[inline] pub fn len(&self) -> usize { self.0.len() }
-    #[inline] pub fn is_empty(&self) -> bool { self.0.is_empty() }
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 pub trait SignatureScheme {

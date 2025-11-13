@@ -16,7 +16,10 @@ fn main() {
     let ss_responder = Kyber768::decapsulate(&ct, &sk).expect("decaps");
 
     assert_eq!(
-        ss_initiator.as_bytes().ct_eq(ss_responder.as_bytes()).unwrap_u8(),
+        ss_initiator
+            .as_bytes()
+            .ct_eq(ss_responder.as_bytes())
+            .unwrap_u8(),
         1
     );
 
