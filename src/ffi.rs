@@ -76,7 +76,7 @@ struct OQS_SIG {
 unsafe fn kem_new_with_fallback() -> *mut OQS_KEM {
     for name in ["ML-KEM-768", "Kyber768"] {
         let cname = CString::new(name).expect("CString::new failed");
-        let ptr = OQS_KEM_new(cname.as_ptr());
+        let ptr = unsafe { OQS_KEM_new(cname.as_ptr()) };
         if !ptr.is_null() {
             return ptr;
         }
@@ -87,7 +87,7 @@ unsafe fn kem_new_with_fallback() -> *mut OQS_KEM {
 unsafe fn sig_new_with_fallback() -> *mut OQS_SIG {
     for name in ["ML-DSA-44", "Dilithium2", "ML-DSA-2"] {
         let cname = CString::new(name).expect("CString::new failed");
-        let ptr = OQS_SIG_new(cname.as_ptr());
+        let ptr = unsafe { OQS_SIG_new(cname.as_ptr()) };
         if !ptr.is_null() {
             return ptr;
         }
