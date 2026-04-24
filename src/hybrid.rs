@@ -1,11 +1,22 @@
 //! Hybrid crypto helpers.
 //!
-//! This module provides a simple combiner for PQC + classical shared secrets.
-//! Real-world deployments often use hybrid key exchange during migration.
+//! This module provides a secure combiner for PQC + classical shared secrets.
+//! Real-world deployments SHOULD use hybrid key exchange during migration,
+//! e.g. ML-KEM + X25519.
+//!
+//! This implementation uses HKDF-SHA256 with domain separation.
 
-use sha2::{Digest, Sha256};
-use zeroize::Zeroize;
+use hkdf::Hkdf;
+use sha2::Sha256;
+use zeroize::{Zeroize, Zeroizing};
 
+/// A zeroized hybrid shared secret.
+///
+/// This represents the output of combining:
+/// - a PQC shared secret (e.g. ML-KEM)
+/// - a classical shared secret (e.g. X25519)
+///
+/// The memory is securely wiped on drop.
 #[derive(Clone, Debug, Zeroize)]
 #[zeroize(drop)]
 pub struct HybridSharedSecret {
@@ -30,23 +41,83 @@ impl HybridSharedSecret {
     }
 }
 
-/// Combines a PQC shared secret and a classical shared secret using SHA-256.
+/// Derives a hybrid shared secret using HKDF-SHA256.
 ///
-/// This is useful for hybrid migration designs such as:
-/// - ML-KEM + X25519
-/// - ML-KEM + ECDH
+/// This is the recommended approach for combining:
+/// - PQC secret (ML-KEM)
+/// - Classical secret (X25519 / ECDH)
 ///
-/// SECURITY NOTE:
-/// This is only a combiner helper. Protocol-level binding, transcript hashing,
-/// authentication, and downgrade protection must be handled by the caller.
-pub fn combine_shared_secrets(pqc_secret: &[u8], classical_secret: &[u8]) -> HybridSharedSecret {
-    let mut hasher = Sha256::new();
+/// # Parameters
+/// - `pqc_secret`: ML-KEM shared secret
+/// - `classical_secret`: X25519 or ECDH shared secret
+/// - `context`: domain separation label (protocol-specific)
+///
+/// # Security Properties
+/// - Uses HKDF (not raw hashing)
+/// - Domain-separated
+/// - Supports variable output length
+/// - Intermediate material is zeroized
+///
+/// # Example context labels
+/// - b"oqs-safe-v0.4-hybrid"
+/// - b"tls13 hybrid handshake"
+///
+/// # WARNING
+/// This function does NOT provide:
+/// - Authentication
+/// - Transcript binding
+/// - Downgrade protection
+///
+/// These MUST be handled at the protocol layer.
+pub fn derive_hybrid_secret(
+    pqc_secret: &[u8],
+    classical_secret: &[u8],
+    context: &[u8],
+) -> HybridSharedSecret {
+    // Combine input key material (IKM)
+    let mut ikm = Zeroizing::new(Vec::with_capacity(
+        pqc_secret.len() + classical_secret.len(),
+    ));
 
-    hasher.update(b"oqs-safe hybrid secret v1");
-    hasher.update((pqc_secret.len() as u64).to_be_bytes());
-    hasher.update(pqc_secret);
-    hasher.update((classical_secret.len() as u64).to_be_bytes());
-    hasher.update(classical_secret);
+    ikm.extend_from_slice(pqc_secret);
+    ikm.extend_from_slice(classical_secret);
 
-    HybridSharedSecret::new(hasher.finalize().to_vec())
+    // HKDF extract + expand
+    let hk = Hkdf::<Sha256>::new(Some(context), &ikm);
+
+    let mut okm = vec![0u8; 32]; // default 256-bit output
+
+    hk.expand(b"oqs-safe hybrid derived secret", &mut okm)
+        .expect("hkdf expand failure");
+
+    HybridSharedSecret::new(okm)
+}
+
+/// Same as `derive_hybrid_secret` but allows custom output length.
+///
+/// Useful for deriving:
+/// - AES-256 keys (32 bytes)
+/// - ChaCha20 keys (32 bytes)
+/// - Longer key material for session splitting
+pub fn derive_hybrid_secret_with_len(
+    pqc_secret: &[u8],
+    classical_secret: &[u8],
+    context: &[u8],
+    out_len: usize,
+) -> HybridSharedSecret {
+    let mut ikm = Zeroizing::new(Vec::with_capacity(
+        pqc_secret.len() + classical_secret.len(),
+    ));
+
+    ikm.extend_from_slice(pqc_secret);
+    ikm.extend_from_slice(classical_secret);
+
+    let hk = Hkdf::<Sha256>::new(Some(context), &ikm);
+
+    let mut okm = vec![0u8; out_len];
+
+    hk.expand(b"oqs-safe hybrid derived secret", &mut okm)
+        .expect("hkdf expand failure");
+
+    HybridSharedSecret::new(okm)
 }
