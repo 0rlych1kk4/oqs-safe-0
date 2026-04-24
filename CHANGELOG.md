@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.4.0] - 2026-04-24
+
+### Added
+- Full ML-KEM support (512, 768, 1024)
+- Full ML-DSA support (44, 65, 87)
+- Hybrid key exchange (X25519 + ML-KEM)
+- HKDF-based hybrid secret derivation
+- SecureSession helper for key derivation
+- New examples:
+  - hybrid_x25519_mlkem.rs
+  - secure session usage patterns
+
+### Changed
+- Upgraded hybrid combiner from SHA256 to HKDF-based design
+
+### Security
+- Improved domain separation in hybrid derivation
+- Explicit zeroization of hybrid secrets
+
 ## 0.2.5 – 2025-11-13
 - Hardening: enabled `#![deny(unsafe_op_in_unsafe_fn)]` for stricter safety guarantees around any future unsafe usage.
 - Metadata: updated descriptions/keywords to clarify support for NIST ML-KEM and ML-DSA families.
