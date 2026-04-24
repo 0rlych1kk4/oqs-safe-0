@@ -1,9 +1,21 @@
-use oqs_safe::sig::{Dilithium2, SignatureScheme};
+use oqs_safe::sig::{SigAlgorithm, SigInstance, SignatureScheme};
 
-fn main() {
-    let (pk, sk) = Dilithium2::keypair().expect("keypair");
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let sig_scheme = SigInstance::new(SigAlgorithm::MlDsa44);
+
+    let (pk, sk) = sig_scheme.keypair()?;
+
     let msg = b"hello pqc";
-    let sig = Dilithium2::sign(&sk, msg).expect("sign");
-    Dilithium2::verify(&pk, msg, &sig).expect("verify");
-    println!("SIG ok: pk={} sig={}", pk.len(), sig.len());
+    let signature = sig_scheme.sign(&sk, msg)?;
+
+    sig_scheme.verify(&pk, msg, &signature)?;
+
+    println!(
+        "SIG ok: algorithm={:?} pk={} sig={}",
+        sig_scheme.algorithm(),
+        pk.len(),
+        signature.len()
+    );
+
+    Ok(())
 }

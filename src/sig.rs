@@ -1,4 +1,9 @@
-//! Signature API with safe accessors and feature-gated RNG for the mock backend.
+//! Safe signature API for ML-DSA / Dilithium.
+//!
+//! Supports:
+//! - ML-DSA-44 / Dilithium2
+//! - ML-DSA-65 / Dilithium3
+//! - ML-DSA-87 / Dilithium5
 
 use crate::OqsError;
 use zeroize::Zeroize;
@@ -6,120 +11,228 @@ use zeroize::Zeroize;
 #[cfg(not(feature = "liboqs"))]
 use rand_core::{OsRng, RngCore};
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SigAlgorithm {
+    MlDsa44,
+    MlDsa65,
+    MlDsa87,
+}
+
+impl SigAlgorithm {
+    pub fn names(self) -> &'static [&'static str] {
+        match self {
+            SigAlgorithm::MlDsa44 => &["ML-DSA-44", "Dilithium2", "ML-DSA-2"],
+            SigAlgorithm::MlDsa65 => &["ML-DSA-65", "Dilithium3", "ML-DSA-3"],
+            SigAlgorithm::MlDsa87 => &["ML-DSA-87", "Dilithium5", "ML-DSA-5"],
+        }
+    }
+
+    pub fn public_key_len(self) -> usize {
+        match self {
+            SigAlgorithm::MlDsa44 => 1312,
+            SigAlgorithm::MlDsa65 => 1952,
+            SigAlgorithm::MlDsa87 => 2592,
+        }
+    }
+
+    pub fn secret_key_len(self) -> usize {
+        match self {
+            SigAlgorithm::MlDsa44 => 2528,
+            SigAlgorithm::MlDsa65 => 4000,
+            SigAlgorithm::MlDsa87 => 4864,
+        }
+    }
+
+    pub fn signature_len(self) -> usize {
+        match self {
+            SigAlgorithm::MlDsa44 => 2420,
+            SigAlgorithm::MlDsa65 => 3293,
+            SigAlgorithm::MlDsa87 => 4595,
+        }
+    }
+}
 
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct PublicKey(pub(crate) Vec<u8>);
-
-#[derive(Clone, Debug, Zeroize)]
-#[zeroize(drop)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct SecretKey(pub(crate) Vec<u8>);
+pub struct PublicKey {
+    alg: SigAlgorithm,
+    bytes: Vec<u8>,
+}
 
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Signature(pub(crate) Vec<u8>);
+pub struct SecretKey {
+    alg: SigAlgorithm,
+    bytes: Vec<u8>,
+}
 
-// ---- Read-only accessors ----
+#[derive(Clone, Debug)]
+pub struct Signature {
+    alg: SigAlgorithm,
+    bytes: Vec<u8>,
+}
+
+impl Drop for SecretKey {
+    fn drop(&mut self) {
+        self.bytes.zeroize();
+    }
+}
+
 impl PublicKey {
-    #[inline]
+    pub fn new(alg: SigAlgorithm, bytes: Vec<u8>) -> Self {
+        Self { alg, bytes }
+    }
+
+    pub fn algorithm(&self) -> SigAlgorithm {
+        self.alg
+    }
+
     pub fn as_bytes(&self) -> &[u8] {
-        &self.0
+        &self.bytes
     }
-    #[inline]
+
     pub fn len(&self) -> usize {
-        self.0.len()
+        self.bytes.len()
     }
-    #[inline]
+
     pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
+        self.bytes.is_empty()
     }
 }
+
 impl SecretKey {
-    #[inline]
+    pub fn new(alg: SigAlgorithm, bytes: Vec<u8>) -> Self {
+        Self { alg, bytes }
+    }
+
+    pub fn algorithm(&self) -> SigAlgorithm {
+        self.alg
+    }
+
     pub fn as_bytes(&self) -> &[u8] {
-        &self.0
+        &self.bytes
     }
-    #[inline]
+
     pub fn len(&self) -> usize {
-        self.0.len()
+        self.bytes.len()
     }
-    #[inline]
+
     pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
+        self.bytes.is_empty()
     }
 }
+
 impl Signature {
-    #[inline]
+    pub fn new(alg: SigAlgorithm, bytes: Vec<u8>) -> Self {
+        Self { alg, bytes }
+    }
+
+    pub fn algorithm(&self) -> SigAlgorithm {
+        self.alg
+    }
+
     pub fn as_bytes(&self) -> &[u8] {
-        &self.0
+        &self.bytes
     }
-    #[inline]
+
     pub fn len(&self) -> usize {
-        self.0.len()
+        self.bytes.len()
     }
-    #[inline]
+
     pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
+        self.bytes.is_empty()
     }
 }
 
 pub trait SignatureScheme {
-    fn keypair() -> Result<(PublicKey, SecretKey), OqsError>;
-    fn sign(sk: &SecretKey, msg: &[u8]) -> Result<Signature, OqsError>;
-    fn verify(pk: &PublicKey, msg: &[u8], sig: &Signature) -> Result<(), OqsError>;
+    fn keypair(&self) -> Result<(PublicKey, SecretKey), OqsError>;
+    fn sign(&self, sk: &SecretKey, msg: &[u8]) -> Result<Signature, OqsError>;
+    fn verify(&self, pk: &PublicKey, msg: &[u8], sig: &Signature) -> Result<(), OqsError>;
 }
 
-pub struct Dilithium2;
+#[derive(Clone, Copy, Debug)]
+pub struct SigInstance {
+    alg: SigAlgorithm,
+}
 
-impl SignatureScheme for Dilithium2 {
-    fn keypair() -> Result<(PublicKey, SecretKey), OqsError> {
+impl SigInstance {
+    pub fn new(alg: SigAlgorithm) -> Self {
+        Self { alg }
+    }
+
+    pub fn algorithm(&self) -> SigAlgorithm {
+        self.alg
+    }
+}
+
+impl SignatureScheme for SigInstance {
+    fn keypair(&self) -> Result<(PublicKey, SecretKey), OqsError> {
         #[cfg(feature = "liboqs")]
         {
-            let (pk, sk) = crate::ffi::dilithium2_keypair()?;
-            Ok((PublicKey(pk), SecretKey(sk)))
+            let (pk, sk) = crate::ffi::sig_keypair(self.alg)?;
+            Ok((PublicKey::new(self.alg, pk), SecretKey::new(self.alg, sk)))
         }
+
         #[cfg(not(feature = "liboqs"))]
         {
-            // Mock path: size-faithful random buffers for CI / no-liboqs environments.
-            let mut pk = vec![0u8; 1312];
-            let mut sk = vec![0u8; 2528];
+            let mut pk = vec![0u8; self.alg.public_key_len()];
+            let mut sk = vec![0u8; self.alg.secret_key_len()];
+
             OsRng.fill_bytes(&mut pk);
             OsRng.fill_bytes(&mut sk);
-            Ok((PublicKey(pk), SecretKey(sk)))
+
+            Ok((PublicKey::new(self.alg, pk), SecretKey::new(self.alg, sk)))
         }
     }
 
-    fn sign(sk: &SecretKey, msg: &[u8]) -> Result<Signature, OqsError> {
-        #[cfg(feature = "liboqs")]
-        {
-            crate::ffi::dilithium2_sign(sk.as_bytes(), msg).map(Signature)
+    fn sign(&self, sk: &SecretKey, msg: &[u8]) -> Result<Signature, OqsError> {
+        if sk.algorithm() != self.alg {
+            return Err(OqsError::InvalidLength);
         }
-        #[cfg(not(feature = "liboqs"))]
-        {
-            // Silence unused warnings on mock path
-            let _ = (sk, msg);
-            let mut sig = vec![0u8; 2420];
-            OsRng.fill_bytes(&mut sig);
-            Ok(Signature(sig))
-        }
-    }
 
-    fn verify(pk: &PublicKey, msg: &[u8], sig: &Signature) -> Result<(), OqsError> {
         #[cfg(feature = "liboqs")]
         {
-            crate::ffi::dilithium2_verify(pk.as_bytes(), msg, sig.as_bytes())
+            crate::ffi::sig_sign(self.alg, sk.as_bytes(), msg)
+                .map(|sig| Signature::new(self.alg, sig))
         }
+
         #[cfg(not(feature = "liboqs"))]
         {
-            // Silence unused warnings on mock path
-            let _ = (pk, msg);
-            if sig.len() != 2420 {
+            let _ = msg;
+
+            if sk.len() != self.alg.secret_key_len() {
                 return Err(OqsError::InvalidLength);
             }
+
+            let mut sig = vec![0u8; self.alg.signature_len()];
+            OsRng.fill_bytes(&mut sig);
+
+            Ok(Signature::new(self.alg, sig))
+        }
+    }
+
+    fn verify(&self, pk: &PublicKey, msg: &[u8], sig: &Signature) -> Result<(), OqsError> {
+        if pk.algorithm() != self.alg || sig.algorithm() != self.alg {
+            return Err(OqsError::InvalidLength);
+        }
+
+        #[cfg(feature = "liboqs")]
+        {
+            crate::ffi::sig_verify(self.alg, pk.as_bytes(), msg, sig.as_bytes())
+        }
+
+        #[cfg(not(feature = "liboqs"))]
+        {
+            let _ = msg;
+
+            if pk.len() != self.alg.public_key_len() || sig.len() != self.alg.signature_len() {
+                return Err(OqsError::InvalidLength);
+            }
+
             Ok(())
         }
     }
 }
+
+pub type MlDsa44 = SigInstance;
+pub type MlDsa65 = SigInstance;
+pub type MlDsa87 = SigInstance;
+pub type Dilithium2 = SigInstance;

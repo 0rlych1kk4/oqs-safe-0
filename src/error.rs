@@ -11,7 +11,7 @@ pub enum OqsError {
 impl fmt::Display for OqsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            OqsError::NotImplemented => write!(f, "not implemented (enable `liboqs`)"),
+            OqsError::NotImplemented => write!(f, "not implemented"),
             OqsError::InvalidLength => write!(f, "invalid length"),
             OqsError::VerifyFail => write!(f, "verification failed"),
             OqsError::Internal(m) => write!(f, "internal error: {}", m),

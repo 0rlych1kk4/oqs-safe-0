@@ -10,6 +10,7 @@ compile_error!("No backend selected. Enable `features=[\"liboqs\"]` for real cry
 compile_error!("`mock` backend in release build. Use RUSTFLAGS='--cfg allow_mock_release' if you truly intend to ship a mock.");
 
 pub mod error;
+pub mod hybrid;
 pub mod kem;
 pub mod sig;
 
