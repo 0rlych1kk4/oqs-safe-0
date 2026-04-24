@@ -75,7 +75,8 @@ unsafe fn kem_new(alg: KemAlgorithm) -> *mut OQS_KEM {
 
     for name in [nist_name, legacy_name] {
         let cname = CString::new(name).expect("CString::new failed");
-        let ptr = OQS_KEM_new(cname.as_ptr());
+
+        let ptr = unsafe { OQS_KEM_new(cname.as_ptr()) };
 
         if !ptr.is_null() {
             return ptr;
@@ -88,7 +89,8 @@ unsafe fn kem_new(alg: KemAlgorithm) -> *mut OQS_KEM {
 unsafe fn sig_new(alg: SigAlgorithm) -> *mut OQS_SIG {
     for name in alg.names() {
         let cname = CString::new(*name).expect("CString::new failed");
-        let ptr = OQS_SIG_new(cname.as_ptr());
+
+        let ptr = unsafe { OQS_SIG_new(cname.as_ptr()) };
 
         if !ptr.is_null() {
             return ptr;
