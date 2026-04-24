@@ -1,46 +1,59 @@
 name: CI
+
 on:
   push:
   pull_request:
   workflow_dispatch:
 
 jobs:
-  test-mock:
+  test-default:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@stable
-      - name: Cache cargo (registry + target)
+        with:
+          components: rustfmt
+
+      - name: Cache cargo
         uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
-      - name: Build & test (mock backend)
+          key: cargo-default-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Format check
+        run: cargo fmt --check
+
+      - name: Build default backend
+        run: cargo build --verbose
+
+      - name: Test default backend
+        run: cargo test --verbose
+
+      - name: Run examples
         run: |
-          set -eux
-          cargo build --features "mock,kyber768,dilithium2" --verbose
-          cargo test  --features "mock,kyber768,dilithium2,testing" --verbose
+          cargo run --example kem_roundtrip
+          cargo run --example dsa_sign_verify
+          cargo run --example hkdf_handshake
 
   test-liboqs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Install build deps
         run: |
-          set -eux
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build build-essential pkg-config
 
-      # Get the current liboqs main commit to key the cache
       - name: Resolve liboqs SHA
         id: liboqs-sha
         run: |
-          set -eux
           echo "sha=$(git ls-remote https://github.com/open-quantum-safe/liboqs refs/heads/main | cut -f1)" >> "$GITHUB_OUTPUT"
 
       - name: Cache liboqs install
@@ -50,13 +63,12 @@ jobs:
           path: ${{ github.workspace }}/.local/liboqs
           key: liboqs-${{ runner.os }}-${{ steps.liboqs-sha.outputs.sha }}
 
-      - name: Build & install liboqs (clone to temp if cache missed)
+      - name: Build and install liboqs
         if: steps.cache-liboqs.outputs.cache-hit != 'true'
         env:
           PREFIX: ${{ github.workspace }}/.local/liboqs
           SRC: ${{ runner.temp }}/liboqs-src
         run: |
-          set -eux
           rm -rf "$SRC"
           git clone --depth 1 https://github.com/open-quantum-safe/liboqs "$SRC"
           cmake -S "$SRC" -B "$SRC/build" -G Ninja \
@@ -66,7 +78,7 @@ jobs:
             -DCMAKE_INSTALL_PREFIX="$PREFIX"
           cmake --build "$SRC/build" --target install
 
-      - name: Export lib paths
+      - name: Export liboqs paths
         env:
           PREFIX: ${{ github.workspace }}/.local/liboqs
         run: |
@@ -74,22 +86,17 @@ jobs:
           echo "PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig" >> "$GITHUB_ENV"
           echo "LD_LIBRARY_PATH=$PREFIX/lib" >> "$GITHUB_ENV"
 
-      - name: Cache cargo (registry + target)
+      - name: Cache cargo
         uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          key: cargo-liboqs-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build & test (real liboqs backend)
-        env:
-          LIBOQS_DIR: ${{ env.LIBOQS_DIR }}
-          PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
-          LD_LIBRARY_PATH: ${{ env.LD_LIBRARY_PATH }}
-        run: |
-          set -eux
-          cargo build --features "liboqs,kyber768,dilithium2,strict" --verbose
-          cargo test  --features "liboqs,kyber768,dilithium2" --verbose
+      - name: Build real liboqs backend
+        run: cargo build --features "liboqs ml_kem_768 ml_dsa_44" --verbose
 
+      - name: Test real liboqs backend
+        run: cargo test --features "liboqs ml_kem_768 ml_dsa_44" --verbose
