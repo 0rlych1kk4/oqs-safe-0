@@ -9,7 +9,7 @@ documentation = "https://docs.rs/oqs-safe"
 readme = "README.md"
 categories = ["cryptography", "api-bindings"]
 keywords = ["post-quantum", "pqc", "ml-kem", "ml-dsa", "liboqs"]
-description = "Safe Rust wrapper over libOQS for ML-KEM and ML-DSA with mock fallback."
+description = "Post-Quantum Cryptography (PQC) toolkit in Rust with ML-KEM, ML-DSA, hybrid cryptography (X25519 + ML-KEM), and secure session primitives."
 
 include = [
   "src/**",
