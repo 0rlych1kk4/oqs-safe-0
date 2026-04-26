@@ -6,9 +6,6 @@ pub fn x25519_keypair() -> (PublicKey, StaticSecret) {
     (pk, sk)
 }
 
-pub fn x25519_shared_secret(
-    sk: &StaticSecret,
-    pk: &PublicKey,
-) -> [u8; 32] {
+pub fn x25519_shared_secret(sk: &StaticSecret, pk: &PublicKey) -> [u8; 32] {
     sk.diffie_hellman(pk).to_bytes()
 }
