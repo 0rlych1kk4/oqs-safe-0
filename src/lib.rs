@@ -76,6 +76,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 pub mod error;
+pub mod handshake;
 pub mod hybrid;
 pub mod kem;
 pub mod sig;

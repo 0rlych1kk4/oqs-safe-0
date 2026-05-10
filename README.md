@@ -8,7 +8,7 @@
 
 ---
 
-##  oqs-safe v0.4.0
+##  oqs-safe v0.5.0
 
 **oqs-safe** is a **production-oriented Post-Quantum Cryptography (PQC) toolkit in Rust**, built on top of [libOQS].
 
@@ -79,11 +79,11 @@ Supports **hybrid key exchange** combining:
 
 - **Default (mock backend for CI/dev):**
   ```toml
-  oqs-safe = { version = "0.4", features = ["ml_kem_768", "ml_dsa_44"] }
+  oqs-safe = { version = "0.5", features = ["ml_kem_768", "ml_dsa_44"] }
 
 - **Production (real liboqs backend):**
 
-  oqs-safe = { version = "0.4", default-features = false, features = ["liboqs", "ml_kem_768", "ml_dsa_44"] }
+  oqs-safe = { version = "0.5", default-features = false, features = ["liboqs", "ml_kem_768", "ml_dsa_44"] }
 
 ### 2. (Prod only) Install libOQS
 
@@ -106,6 +106,36 @@ Supports **hybrid key exchange** combining:
   export PKG_CONFIG_PATH="$HOME/.local/liboqs/lib/pkgconfig:${PKG_CONFIG_PATH}"
 ```
 ## Quickstart
+
+### Hybrid Handshake API
+
+`oqs-safe v0.5.0` introduces a TLS-style hybrid handshake abstraction.
+
+The API combines:
+
+- X25519 classical key exchange
+- ML-KEM post-quantum encapsulation
+- HKDF-based hybrid secret derivation
+- Client/server session key separation
+
+```rust
+use oqs_safe::handshake::{HybridClient, HybridServer};
+
+let mut client = HybridClient::new();
+let client_hello = client.start_handshake()?;
+
+let mut server = HybridServer::new();
+let server_hello = server.respond(client_hello)?;
+
+let client_session = client.finish(server_hello)?;
+let server_session = server.session()?;
+
+let (client_send_key, client_recv_key) = client_session.derive_client_server_keys();
+let (server_send_key, server_recv_key) = server_session.derive_client_server_keys();
+
+assert_eq!(client_send_key, server_send_key);
+assert_eq!(client_recv_key, server_recv_key);
+```
 ### ML-KEM Key Exchange
 ```rust
    use oqs_safe::kem::{Kem, KemAlgorithm, KemInstance};
