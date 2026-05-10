@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.5.0] - 2026-05-10
+
+### Added
+- Added `handshake` module.
+- Added `HybridClient` and `HybridServer`.
+- Added TLS-style hybrid handshake flow:
+  - client hello
+  - server response
+  - session derivation
+- Added `examples/hybrid_handshake.rs`.
+- Added handshake tests.
+
+### Security
+- Hybrid handshake derives session material from both:
+  - X25519 classical shared secret
+  - ML-KEM post-quantum shared secret
+- Session keys are derived using HKDF through `SecureSession`.
+- The default mock backend is for CI/dev only and is not suitable for real cryptographic use.
+- Real cryptographic use requires the `liboqs` feature.
+- The handshake abstraction does not replace protocol-level authentication, transcript binding, identity verification, or downgrade protection.
+
 ## [0.4.0] - 2026-04-24
 
 ### Added
