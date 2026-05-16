@@ -7,6 +7,9 @@
 [![CI](https://github.com/0rlych1kk4/oqs-safe-0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/0rlych1kk4/oqs-safe-0/actions/workflows/ci.yml)
 
 ---
+## Architecture
+
+![oqs-safe architecture](assets/Architecture.png)
 
 ##  oqs-safe v0.5.0
 
@@ -167,30 +170,32 @@ cargo run --example hybrid_x25519_mlkem
 
 ### Derive session keys
 
+```rust
    use oqs_safe::session::SecureSession;
 
    let session = SecureSession::new(shared_secret);
 
-   let (client_key, server_key) = session.derive_client_server_keys(); 
+   let (client_key, server_key) = session.derive_client_server_keys();
+``` 
 ---
 ## Examples
 
 - **Mock backend:**
-```rust
+```bash
 cargo run --example kem_roundtrip --features "ml_kem_768"
 cargo run --example dsa_sign_verify --features "ml_dsa_44"
 cargo run --example hybrid_x25519_mlkem
 ```
 
 - **Real backend:**
-```rust
+```bash
 cargo run --example kem_roundtrip --features "liboqs,ml_kem_768"
 cargo run --example dsa_sign_verify --features "liboqs,ml_dsa_44"
 cargo run --example hybrid_x25519_mlkem --features "liboqs"
 ```
 ---
 ## Testing
-```rust
+```bash
 cargo test
 cargo test --features "liboqs"
 ```

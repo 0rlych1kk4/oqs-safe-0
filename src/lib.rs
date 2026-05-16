@@ -46,9 +46,16 @@
 //!
 //! ## Hybrid Example (Recommended for PQC Migration)
 //!
-//! ```no_run
-//! // Run the full example:
-//! // cargo run --example hybrid_x25519_mlkem
+//! Run the full hybrid example:
+//!
+//! ```text
+//! cargo run --example hybrid_x25519_mlkem
+//! ```
+//!
+//! Run the TLS-style hybrid handshake example:
+//!
+//! ```text
+//! cargo run --example hybrid_handshake
 //! ```
 //!
 //! ## Modules
@@ -56,7 +63,9 @@
 //! - [`kem`] - Post-quantum key exchange (ML-KEM)
 //! - [`sig`] - Post-quantum signatures (ML-DSA)
 //! - [`hybrid`] - Hybrid cryptography helpers
+//! - [`handshake`] - TLS-style hybrid handshake abstraction
 //! - [`session`] - Secure session key derivation
+//! - [`classical`] - Classical cryptography helpers such as X25519
 //! - [`error`] - Error types
 //!
 //! ## Backends
@@ -68,6 +77,8 @@
 //!
 //! - Always derive keys using HKDF before use
 //! - Use hybrid cryptography (X25519 + ML-KEM) for migration
+//! - Hybrid cryptography does not replace authentication
+//! - Bind identities and transcripts in real protocols
 //! - Do not rely on PQC-only deployments yet
 //! - Avoid logging or serializing secret material
 //!
@@ -81,10 +92,10 @@ pub mod hybrid;
 pub mod kem;
 pub mod sig;
 
-// NEW: expose session module publicly
+// Expose session module publicly.
 pub mod session;
 
-// NEW: expose classical crypto helpers (X25519)
+// Expose classical crypto helpers such as X25519.
 pub mod classical;
 
 #[cfg(feature = "liboqs")]

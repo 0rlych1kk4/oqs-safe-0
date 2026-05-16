@@ -1,6 +1,6 @@
 [package]
 name = "oqs-safe"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 authors = ["Orlando Trajano <orlychikka@gmail.com>"]
@@ -15,6 +15,7 @@ include = [
   "src/**",
   "examples/**",
   "tests/**",
+  "assets/**",
   "Cargo.toml",
   "Cargo.lock",
   "build.rs",
