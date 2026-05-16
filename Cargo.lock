@@ -148,7 +148,7 @@ checksum = "58f929b4d672ea937a23a1ab494143d968337a5f47e56d0815df1e0890ddf174"
 
 [[package]]
 name = "oqs-safe"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "cc",
  "getrandom",
