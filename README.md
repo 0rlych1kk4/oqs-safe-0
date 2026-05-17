@@ -11,7 +11,7 @@
 
 ![oqs-safe architecture](assets/Architecture.png)
 
-##  oqs-safe v0.5.0
+##  oqs-safe v0.6.0
 
 **oqs-safe** is a **production-oriented Post-Quantum Cryptography (PQC) toolkit in Rust**, built on top of [libOQS].
 
@@ -63,6 +63,45 @@ Supports **hybrid key exchange** combining:
 - Client/server key separation
 
 ---
+### Handshake Transcript Binding (NEW in v0.6.0)
+
+The hybrid handshake now binds session derivation to a transcript hash covering:
+
+- selected KEM algorithm
+- client X25519 public key
+- client ML-KEM public key
+- server X25519 public key
+- ML-KEM ciphertext
+
+This helps both sides derive the final session key from the same exchanged handshake messages.
+---
+### Optional Handshake Serialization (NEW in v0.6.0)
+
+Enable the `serialization` feature to serialize and deserialize handshake messages:
+
+```toml
+oqs-safe = { version = "0.6", features = ["serialization"] }
+```
+Supported helpers:
+
+- ClientHello::to_bytes()
+- ClientHello::from_bytes()
+- ServerHello::to_bytes()
+- ServerHello::from_bytes()
+---
+
+### Optional AEAD Secure Session Helpers (NEW in v0.6.0)
+
+Enable the `aead` feature to use ChaCha20Poly1305 helpers from `SecureSession`:
+
+```toml
+oqs-safe = { version = "0.6", features = ["aead"] }
+```
+Supported helpers:
+- SecureSession::encrypt()
+- SecureSession::decrypt()
+
+The AEAD key is derived from the session master secret using HKDF with a dedicated label.
 
 ### ️ Backends
 
@@ -82,11 +121,11 @@ Supports **hybrid key exchange** combining:
 
 - **Default (mock backend for CI/dev):**
   ```toml
-  oqs-safe = { version = "0.5", features = ["ml_kem_768", "ml_dsa_44"] }
+  oqs-safe = { version = "0.6", features = ["ml_kem_768", "ml_dsa_44"] }
 
 - **Production (real liboqs backend):**
 
-  oqs-safe = { version = "0.5", default-features = false, features = ["liboqs", "ml_kem_768", "ml_dsa_44"] }
+  oqs-safe = { version = "0.6", default-features = false, features = ["liboqs", "ml_kem_768", "ml_dsa_44"] }
 
 ### 2. (Prod only) Install libOQS
 
@@ -112,7 +151,7 @@ Supports **hybrid key exchange** combining:
 
 ### Hybrid Handshake API
 
-`oqs-safe v0.5.0` introduces a TLS-style hybrid handshake abstraction.
+`oqs-safe v0.6.0` introduces a TLS-style hybrid handshake abstraction with transcript-bound session derivation.
 
 The API combines:
 
@@ -195,14 +234,19 @@ cargo run --example hybrid_x25519_mlkem --features "liboqs"
 ```
 ---
 ## Testing
+
 ```bash
 cargo test
+cargo test --features "serialization"
+cargo test --features "aead"
+cargo test --features "serialization,aead"
 cargo test --features "liboqs"
 ```
 ---
 ## Security Notes
 - **Always derive keys via HKDF before use**
-- **Bind identities and transcripts in real protocols**
+- **Hybrid handshake transcript binding is enabled in the handshake API**
+- **Application-level identity authentication is still required**
 - **Hybrid crypto does NOT replace authentication**
 - **Secrets are zeroized on drop**
 - **Avoid logging or serializing secrets**
