@@ -11,7 +11,7 @@
 
 ![oqs-safe architecture](assets/Architecture.png)
 
-##  oqs-safe v0.6.0
+##  oqs-safe v0.6.1
 
 **oqs-safe** is a **production-oriented Post-Quantum Cryptography (PQC) toolkit in Rust**, built on top of [libOQS].
 
@@ -151,7 +151,7 @@ The AEAD key is derived from the session master secret using HKDF with a dedicat
 
 ### Hybrid Handshake API
 
-`oqs-safe v0.6.0` introduces a TLS-style hybrid handshake abstraction with transcript-bound session derivation.
+`oqs-safe v0.6.1` introduces a TLS-style hybrid handshake abstraction with transcript-bound session derivation.
 
 The API combines:
 
