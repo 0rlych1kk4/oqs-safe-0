@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.1] - 2026-05-17
+
+### Fixed
+
+- Updated README release wording for crates.io.
+- Corrected README references from v0.5.0 to the current v0.6.x release line.
+- Refreshed install examples to use `version = "0.6"`.
+
+### Notes
+
+- This is a documentation patch release for crates.io package metadata and README display.
+- No cryptographic API changes from v0.6.0.
+
 ## [0.6.0] - 2026-05-17
 
 ### Added
