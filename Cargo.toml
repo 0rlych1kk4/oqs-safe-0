@@ -35,6 +35,8 @@ hkdf = "0.12"
 subtle = "2"
 sha2 = "0.10"
 x25519-dalek = { version = "2", features = ["static_secrets"] }
+serde = { version = "1", features = ["derive"], optional = true }
+bincode = { version = "1", optional = true }
 
 [build-dependencies]
 pkg-config = "0.3"
@@ -45,6 +47,9 @@ default = []
 
 # Real liboqs backend
 liboqs = []
+
+# Optional handshake message serialization
+serialization = ["serde", "bincode"]
 
 # ML-KEM / Kyber
 ml_kem_512 = ["kyber512"]
@@ -75,7 +80,8 @@ features = [
   "ml_kem_1024",
   "ml_dsa_44",
   "ml_dsa_65",
-  "ml_dsa_87"
+  "ml_dsa_87",
+  "serialization"
 ]
 no-default-features = true
 rustdoc-args = ["--cfg", "docsrs"]
