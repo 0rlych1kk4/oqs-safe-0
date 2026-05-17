@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.6.0 Roadmap
+
+The next development milestone focuses on strengthening the handshake and secure-session layer before expanding algorithm coverage.
+
+Planned improvements:
+
+- Add authenticated handshake transcript binding.
+- Add serialization support for handshake messages.
+- Add AEAD helper using derived session keys.
+- Expand libOQS backend documentation.
+- Add optional SLH-DSA support for broader NIST-standard signature coverage.
 ## [0.5.1] - 2026-05-16
 
 ### Documentation
