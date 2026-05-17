@@ -37,6 +37,7 @@ sha2 = "0.10"
 x25519-dalek = { version = "2", features = ["static_secrets"] }
 serde = { version = "1", features = ["derive"], optional = true }
 bincode = { version = "1", optional = true }
+chacha20poly1305 = { version = "0.10", optional = true }
 
 [build-dependencies]
 pkg-config = "0.3"
@@ -50,6 +51,9 @@ liboqs = []
 
 # Optional handshake message serialization
 serialization = ["serde", "bincode"]
+
+# Optional AEAD helpers for SecureSession
+aead = ["chacha20poly1305"]
 
 # ML-KEM / Kyber
 ml_kem_512 = ["kyber512"]
@@ -81,7 +85,8 @@ features = [
   "ml_dsa_44",
   "ml_dsa_65",
   "ml_dsa_87",
-  "serialization"
+  "serialization",
+  "aead"
 ]
 no-default-features = true
 rustdoc-args = ["--cfg", "docsrs"]
