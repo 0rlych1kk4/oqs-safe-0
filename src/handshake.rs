@@ -12,16 +12,46 @@ use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret};
 const HANDSHAKE_CONTEXT: &[u8] = b"oqs-safe-v0.5.0-hybrid-handshake";
 const HANDSHAKE_TRANSCRIPT_DOMAIN: &[u8] = b"oqs-safe-v0.6.0-handshake-transcript";
 
+#[cfg_attr(
+    feature = "serialization",
+    derive(serde::Serialize, serde::Deserialize)
+)]
 #[derive(Clone, Debug)]
 pub struct ClientHello {
     pub client_x25519_public: Vec<u8>,
     pub client_kem_public: Vec<u8>,
 }
 
+#[cfg_attr(
+    feature = "serialization",
+    derive(serde::Serialize, serde::Deserialize)
+)]
 #[derive(Clone, Debug)]
 pub struct ServerHello {
     pub server_x25519_public: Vec<u8>,
     pub kem_ciphertext: Vec<u8>,
+}
+
+#[cfg(feature = "serialization")]
+impl ClientHello {
+    pub fn to_bytes(&self) -> Result<Vec<u8>, HandshakeError> {
+        bincode::serialize(self).map_err(|_| HandshakeError::InvalidHandshakeState)
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, HandshakeError> {
+        bincode::deserialize(bytes).map_err(|_| HandshakeError::InvalidHandshakeState)
+    }
+}
+
+#[cfg(feature = "serialization")]
+impl ServerHello {
+    pub fn to_bytes(&self) -> Result<Vec<u8>, HandshakeError> {
+        bincode::serialize(self).map_err(|_| HandshakeError::InvalidHandshakeState)
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, HandshakeError> {
+        bincode::deserialize(bytes).map_err(|_| HandshakeError::InvalidHandshakeState)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -497,5 +527,64 @@ mod transcript_tests {
         assert_eq!(context_a, context_b);
         assert!(context_a.starts_with(HANDSHAKE_CONTEXT));
         assert!(context_a.ends_with(&transcript_hash));
+    }
+}
+
+#[cfg(all(test, feature = "serialization"))]
+mod serialization_tests {
+    use super::*;
+
+    #[test]
+    fn client_hello_roundtrips_through_bytes() {
+        let client_hello = ClientHello {
+            client_x25519_public: vec![1; 32],
+            client_kem_public: vec![2; 1184],
+        };
+
+        let encoded = client_hello
+            .to_bytes()
+            .expect("client hello should serialize");
+
+        let decoded = ClientHello::from_bytes(&encoded).expect("client hello should deserialize");
+
+        assert_eq!(
+            decoded.client_x25519_public,
+            client_hello.client_x25519_public
+        );
+        assert_eq!(decoded.client_kem_public, client_hello.client_kem_public);
+    }
+
+    #[test]
+    fn server_hello_roundtrips_through_bytes() {
+        let server_hello = ServerHello {
+            server_x25519_public: vec![3; 32],
+            kem_ciphertext: vec![4; 1088],
+        };
+
+        let encoded = server_hello
+            .to_bytes()
+            .expect("server hello should serialize");
+
+        let decoded = ServerHello::from_bytes(&encoded).expect("server hello should deserialize");
+
+        assert_eq!(
+            decoded.server_x25519_public,
+            server_hello.server_x25519_public
+        );
+        assert_eq!(decoded.kem_ciphertext, server_hello.kem_ciphertext);
+    }
+
+    #[test]
+    fn invalid_client_hello_bytes_fail_to_deserialize() {
+        let invalid = b"not-a-valid-client-hello";
+
+        assert!(ClientHello::from_bytes(invalid).is_err());
+    }
+
+    #[test]
+    fn invalid_server_hello_bytes_fail_to_deserialize() {
+        let invalid = b"not-a-valid-server-hello";
+
+        assert!(ServerHello::from_bytes(invalid).is_err());
     }
 }
