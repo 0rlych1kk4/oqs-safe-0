@@ -6,11 +6,11 @@ use crate::{
 };
 
 use rand_core::OsRng;
-#[cfg(not(feature = "liboqs"))]
 use sha2::{Digest, Sha256};
 use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret};
 
 const HANDSHAKE_CONTEXT: &[u8] = b"oqs-safe-v0.5.0-hybrid-handshake";
+const HANDSHAKE_TRANSCRIPT_DOMAIN: &[u8] = b"oqs-safe-v0.6.0-handshake-transcript";
 
 #[derive(Clone, Debug)]
 pub struct ClientHello {
@@ -22,6 +22,63 @@ pub struct ClientHello {
 pub struct ServerHello {
     pub server_x25519_public: Vec<u8>,
     pub kem_ciphertext: Vec<u8>,
+}
+
+#[derive(Debug, Clone)]
+pub struct HandshakeTranscript {
+    hasher: Sha256,
+}
+
+impl HandshakeTranscript {
+    pub fn new() -> Self {
+        let mut hasher = Sha256::new();
+        hasher.update(HANDSHAKE_TRANSCRIPT_DOMAIN);
+        Self { hasher }
+    }
+
+    pub fn update_labelled(&mut self, label: &[u8], data: &[u8]) {
+        update_len_prefixed(&mut self.hasher, label);
+        update_len_prefixed(&mut self.hasher, data);
+    }
+
+    pub fn update_algorithm(&mut self, algorithm: KemAlgorithm) {
+        self.update_labelled(b"kem_algorithm", format!("{algorithm:?}").as_bytes());
+    }
+
+    pub fn update_client_hello(&mut self, client_hello: &ClientHello) {
+        self.update_labelled(b"client_x25519_public", &client_hello.client_x25519_public);
+        self.update_labelled(b"client_kem_public", &client_hello.client_kem_public);
+    }
+
+    pub fn update_server_hello(&mut self, server_hello: &ServerHello) {
+        self.update_labelled(b"server_x25519_public", &server_hello.server_x25519_public);
+        self.update_labelled(b"kem_ciphertext", &server_hello.kem_ciphertext);
+    }
+
+    pub fn finalize(self) -> [u8; 32] {
+        let digest = self.hasher.finalize();
+        let mut out = [0u8; 32];
+        out.copy_from_slice(&digest);
+        out
+    }
+}
+
+impl Default for HandshakeTranscript {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+fn update_len_prefixed(hasher: &mut Sha256, data: &[u8]) {
+    hasher.update((data.len() as u64).to_be_bytes());
+    hasher.update(data);
+}
+
+fn transcript_bound_context(transcript_hash: &[u8; 32]) -> Vec<u8> {
+    let mut context = Vec::with_capacity(HANDSHAKE_CONTEXT.len() + transcript_hash.len());
+    context.extend_from_slice(HANDSHAKE_CONTEXT);
+    context.extend_from_slice(transcript_hash);
+    context
 }
 
 #[derive(Debug)]
@@ -59,6 +116,7 @@ pub struct HybridClient {
 struct ClientHandshakeState {
     x25519_secret: StaticSecret,
     kem_secret: SecretKey,
+    client_hello: ClientHello,
 }
 
 impl HybridClient {
@@ -82,15 +140,18 @@ impl HybridClient {
 
         let (client_kem_public, client_kem_secret) = self.kem.keypair()?;
 
+        let client_hello = ClientHello {
+            client_x25519_public: client_x25519_public.as_bytes().to_vec(),
+            client_kem_public: client_kem_public.as_bytes().to_vec(),
+        };
+
         self.state = Some(ClientHandshakeState {
             x25519_secret: client_x25519_secret,
             kem_secret: client_kem_secret,
+            client_hello: client_hello.clone(),
         });
 
-        Ok(ClientHello {
-            client_x25519_public: client_x25519_public.as_bytes().to_vec(),
-            client_kem_public: client_kem_public.as_bytes().to_vec(),
-        })
+        Ok(client_hello)
     }
 
     pub fn finish(&mut self, server_hello: ServerHello) -> Result<SecureSession, HandshakeError> {
@@ -118,10 +179,18 @@ impl HybridClient {
             &state.kem_secret,
         )?;
 
+        let mut transcript = HandshakeTranscript::new();
+        transcript.update_algorithm(self.kem.algorithm());
+        transcript.update_client_hello(&state.client_hello);
+        transcript.update_server_hello(&server_hello);
+        let transcript_hash = transcript.finalize();
+
+        let context = transcript_bound_context(&transcript_hash);
+
         let hybrid_secret = derive_hybrid_secret(
             pqc_secret.as_slice(),
             classical_secret.as_bytes(),
-            HANDSHAKE_CONTEXT,
+            context.as_slice(),
         );
 
         Ok(SecureSession::new(hybrid_secret.as_bytes().to_vec()))
@@ -177,18 +246,28 @@ impl HybridServer {
         let (kem_ciphertext, pqc_secret) =
             server_pqc_secret(self.kem.algorithm(), &client_hello.client_kem_public)?;
 
+        let server_hello = ServerHello {
+            server_x25519_public: server_x25519_public.as_bytes().to_vec(),
+            kem_ciphertext,
+        };
+
+        let mut transcript = HandshakeTranscript::new();
+        transcript.update_algorithm(self.kem.algorithm());
+        transcript.update_client_hello(&client_hello);
+        transcript.update_server_hello(&server_hello);
+        let transcript_hash = transcript.finalize();
+
+        let context = transcript_bound_context(&transcript_hash);
+
         let hybrid_secret = derive_hybrid_secret(
             pqc_secret.as_slice(),
             classical_secret.as_bytes(),
-            HANDSHAKE_CONTEXT,
+            context.as_slice(),
         );
 
         self.session = Some(SecureSession::new(hybrid_secret.as_bytes().to_vec()));
 
-        Ok(ServerHello {
-            server_x25519_public: server_x25519_public.as_bytes().to_vec(),
-            kem_ciphertext,
-        })
+        Ok(server_hello)
     }
 
     pub fn session(&self) -> Result<&SecureSession, HandshakeError> {
@@ -292,4 +371,131 @@ fn mock_shared_secret(algorithm: KemAlgorithm, kem_ciphertext: &[u8]) -> Vec<u8>
     hasher.update(kem_ciphertext);
 
     hasher.finalize().to_vec()
+}
+
+#[cfg(test)]
+mod transcript_tests {
+    use super::*;
+
+    #[test]
+    fn same_transcript_inputs_produce_same_hash() {
+        let client_hello = ClientHello {
+            client_x25519_public: vec![1; 32],
+            client_kem_public: vec![2; 1184],
+        };
+
+        let server_hello = ServerHello {
+            server_x25519_public: vec![3; 32],
+            kem_ciphertext: vec![4; 1088],
+        };
+
+        let mut t1 = HandshakeTranscript::new();
+        t1.update_algorithm(KemAlgorithm::MlKem768);
+        t1.update_client_hello(&client_hello);
+        t1.update_server_hello(&server_hello);
+
+        let mut t2 = HandshakeTranscript::new();
+        t2.update_algorithm(KemAlgorithm::MlKem768);
+        t2.update_client_hello(&client_hello);
+        t2.update_server_hello(&server_hello);
+
+        assert_eq!(t1.finalize(), t2.finalize());
+    }
+
+    #[test]
+    fn transcript_hash_changes_when_client_hello_changes() {
+        let client_hello_a = ClientHello {
+            client_x25519_public: vec![1; 32],
+            client_kem_public: vec![2; 1184],
+        };
+
+        let client_hello_b = ClientHello {
+            client_x25519_public: vec![9; 32],
+            client_kem_public: vec![2; 1184],
+        };
+
+        let server_hello = ServerHello {
+            server_x25519_public: vec![3; 32],
+            kem_ciphertext: vec![4; 1088],
+        };
+
+        let mut t1 = HandshakeTranscript::new();
+        t1.update_algorithm(KemAlgorithm::MlKem768);
+        t1.update_client_hello(&client_hello_a);
+        t1.update_server_hello(&server_hello);
+
+        let mut t2 = HandshakeTranscript::new();
+        t2.update_algorithm(KemAlgorithm::MlKem768);
+        t2.update_client_hello(&client_hello_b);
+        t2.update_server_hello(&server_hello);
+
+        assert_ne!(t1.finalize(), t2.finalize());
+    }
+
+    #[test]
+    fn transcript_hash_changes_when_server_hello_changes() {
+        let client_hello = ClientHello {
+            client_x25519_public: vec![1; 32],
+            client_kem_public: vec![2; 1184],
+        };
+
+        let server_hello_a = ServerHello {
+            server_x25519_public: vec![3; 32],
+            kem_ciphertext: vec![4; 1088],
+        };
+
+        let server_hello_b = ServerHello {
+            server_x25519_public: vec![3; 32],
+            kem_ciphertext: vec![8; 1088],
+        };
+
+        let mut t1 = HandshakeTranscript::new();
+        t1.update_algorithm(KemAlgorithm::MlKem768);
+        t1.update_client_hello(&client_hello);
+        t1.update_server_hello(&server_hello_a);
+
+        let mut t2 = HandshakeTranscript::new();
+        t2.update_algorithm(KemAlgorithm::MlKem768);
+        t2.update_client_hello(&client_hello);
+        t2.update_server_hello(&server_hello_b);
+
+        assert_ne!(t1.finalize(), t2.finalize());
+    }
+
+    #[test]
+    fn transcript_hash_changes_when_algorithm_changes() {
+        let client_hello = ClientHello {
+            client_x25519_public: vec![1; 32],
+            client_kem_public: vec![2; 1184],
+        };
+
+        let server_hello = ServerHello {
+            server_x25519_public: vec![3; 32],
+            kem_ciphertext: vec![4; 1088],
+        };
+
+        let mut t1 = HandshakeTranscript::new();
+        t1.update_algorithm(KemAlgorithm::MlKem512);
+        t1.update_client_hello(&client_hello);
+        t1.update_server_hello(&server_hello);
+
+        let mut t2 = HandshakeTranscript::new();
+        t2.update_algorithm(KemAlgorithm::MlKem768);
+        t2.update_client_hello(&client_hello);
+        t2.update_server_hello(&server_hello);
+
+        assert_ne!(t1.finalize(), t2.finalize());
+    }
+
+    #[test]
+    fn transcript_bound_context_is_deterministic() {
+        let transcript_hash = [7u8; 32];
+
+        let context_a = transcript_bound_context(&transcript_hash);
+        let context_b = transcript_bound_context(&transcript_hash);
+
+        assert_eq!(context_a, context_b);
+        assert!(context_a.starts_with(HANDSHAKE_CONTEXT));
+        assert!(context_a.ends_with(&transcript_hash));
+    }
 }
