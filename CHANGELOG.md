@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.0] - 2026-05-17
+
+### Added
+
+- Added authenticated hybrid handshake transcript binding.
+- Added optional handshake message serialization via the `serialization` feature.
+- Added optional AEAD helpers for `SecureSession` via the `aead` feature.
+- Added `ClientHello::to_bytes()` and `ClientHello::from_bytes()`.
+- Added `ServerHello::to_bytes()` and `ServerHello::from_bytes()`.
+- Added `SecureSession::encrypt()` and `SecureSession::decrypt()` using ChaCha20Poly1305.
+- Added transcript-binding and AEAD failure-mode tests.
+
+### Security
+
+- Hybrid session derivation is now bound to the selected KEM algorithm, client handshake message, server handshake message, and KEM ciphertext.
+- AEAD helpers derive encryption keys from the session master secret using HKDF with a dedicated label.
+
 ## v0.6.0 Roadmap
 
 The next development milestone focuses on strengthening the handshake and secure-session layer before expanding algorithm coverage.
