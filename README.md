@@ -63,7 +63,7 @@ Supports **hybrid key exchange** combining:
 - Client/server key separation
 
 ---
-### Handshake Transcript Binding (NEW in v0.6.0)
+### Handshake Transcript Binding (Introduced in v0.6.0)
 
 The hybrid handshake now binds session derivation to a transcript hash covering:
 
@@ -75,7 +75,7 @@ The hybrid handshake now binds session derivation to a transcript hash covering:
 
 This helps both sides derive the final session key from the same exchanged handshake messages.
 ---
-### Optional Handshake Serialization (NEW in v0.6.0)
+### Optional Handshake Serialization (Introduced in v0.6.0)
 
 Enable the `serialization` feature to serialize and deserialize handshake messages:
 
@@ -90,7 +90,7 @@ Supported helpers:
 - ServerHello::from_bytes()
 ---
 
-### Optional AEAD Secure Session Helpers (NEW in v0.6.0)
+### Optional AEAD Secure Session Helpers (Introduced in v0.6.0)
 
 Enable the `aead` feature to use ChaCha20Poly1305 helpers from `SecureSession`:
 
