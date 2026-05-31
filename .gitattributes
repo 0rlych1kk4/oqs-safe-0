@@ -1,0 +1,16 @@
+# Exclude vendored/native backend code from GitHub language statistics
+vendor/** linguist-vendored
+third_party/** linguist-vendored
+liboqs/** linguist-vendored
+open-quantum-safe/** linguist-vendored
+oqs/** linguist-vendored
+native/** linguist-vendored
+c_src/** linguist-vendored
+ffi/** linguist-vendored
+build/** linguist-vendored
+
+# Exclude generated/bindgen files if present
+bindings/** linguist-generated
+generated/** linguist-generated
+src/bindings.rs linguist-generated
+src/ffi/bindings.rs linguist-generated
