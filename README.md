@@ -103,6 +103,23 @@ Supported helpers:
 
 The AEAD key is derived from the session master secret using HKDF with a dedicated label.
 
+## Authenticated Hybrid Handshake (Introduced in v0.7.0)
+
+`oqs-safe v0.7.0` includes an authenticated hybrid handshake example for post-quantum migration scenarios.
+
+The example combines:
+
+- X25519 classical key exchange
+- ML-KEM post-quantum key exchange
+- ML-DSA transcript signing and verification
+- Transcript-bound hybrid secret derivation
+- HKDF directional session keys
+
+Run it with:
+
+```bash
+cargo run --example authenticated_hybrid_handshake
+
 ### ️ Backends
 
 - **Mock backend (default)**  
@@ -223,6 +240,7 @@ cargo run --example hybrid_x25519_mlkem
 ```bash
 cargo run --example kem_roundtrip --features "ml_kem_768"
 cargo run --example dsa_sign_verify --features "ml_dsa_44"
+cargo run --example authenticated_hybrid_handshake
 cargo run --example hybrid_x25519_mlkem
 ```
 
@@ -231,6 +249,7 @@ cargo run --example hybrid_x25519_mlkem
 cargo run --example kem_roundtrip --features "liboqs,ml_kem_768"
 cargo run --example dsa_sign_verify --features "liboqs,ml_dsa_44"
 cargo run --example hybrid_x25519_mlkem --features "liboqs"
+cargo run --example authenticated_hybrid_handshake --features "liboqs"
 ```
 ---
 ## Testing
