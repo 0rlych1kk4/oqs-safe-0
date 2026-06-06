@@ -1,5 +1,22 @@
 # Changelog
 
+# oqs-safe v0.7.0
+
+## Added
+- Added authenticated hybrid handshake example.
+- Added transcript authentication pattern using ML-DSA.
+- Added hybrid X25519 + ML-KEM session derivation example with transcript binding.
+- Added directional session key derivation using HKDF.
+
+## Improved
+- Clarified that hybrid key exchange does not replace identity authentication.
+- Improved practical PQC migration guidance through a complete handshake example.
+
+## Security
+- Demonstrates transcript signing and verification.
+- Reinforces authentication on top of hybrid key exchange.
+- Notes that mock ML-KEM mode does not produce matching shared secrets.
+
 ## [0.6.1] - 2026-05-17
 
 ### Fixed
