@@ -38,6 +38,8 @@ x25519-dalek = { version = "2", features = ["static_secrets"] }
 serde = { version = "1", features = ["derive"], optional = true }
 bincode = { version = "1", optional = true }
 chacha20poly1305 = { version = "0.10", optional = true }
+clap = { version = "4", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
 
 [build-dependencies]
 pkg-config = "0.3"
@@ -45,7 +47,7 @@ cc = "1"
 
 [features]
 default = []
-
+cli = ["clap", "serde", "serde_json"]
 # Real liboqs backend
 liboqs = []
 
@@ -90,3 +92,8 @@ features = [
 ]
 no-default-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+
+[[bin]]
+name = "oqs-safe"
+path = "src/bin/oqs_safe.rs"
+required-features = ["cli"]
