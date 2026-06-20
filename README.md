@@ -11,7 +11,7 @@
 
 ![oqs-safe architecture](assets/Architecture.png)
 
-##  oqs-safe v0.6.1
+##  oqs-safe v0.8.0
 
 **oqs-safe** is a **production-oriented Post-Quantum Cryptography (PQC) toolkit in Rust**, built on top of [libOQS].
 
@@ -123,7 +123,7 @@ This helps both sides derive the final session key from the same exchanged hands
 Enable the `serialization` feature to serialize and deserialize handshake messages:
 
 ```toml
-oqs-safe = { version = "0.6", features = ["serialization"] }
+oqs-safe = { version = "0.8", features = ["serialization"] }
 ```
 Supported helpers:
 
@@ -138,7 +138,7 @@ Supported helpers:
 Enable the `aead` feature to use ChaCha20Poly1305 helpers from `SecureSession`:
 
 ```toml
-oqs-safe = { version = "0.6", features = ["aead"] }
+oqs-safe = { version = "0.8", features = ["aead"] }
 ```
 Supported helpers:
 - SecureSession::encrypt()
@@ -181,11 +181,11 @@ cargo run --example authenticated_hybrid_handshake
 
 - **Default (mock backend for CI/dev):**
   ```toml
-  oqs-safe = { version = "0.6", features = ["ml_kem_768", "ml_dsa_44"] }
+  oqs-safe = { version = "0.8", features = ["ml_kem_768", "ml_dsa_44"] }
 
 - **Production (real liboqs backend):**
 
-  oqs-safe = { version = "0.6", default-features = false, features = ["liboqs", "ml_kem_768", "ml_dsa_44"] }
+  oqs-safe = { version = "0.8", default-features = false, features = ["liboqs", "ml_kem_768", "ml_dsa_44"] }
 
 ### 2. (Prod only) Install libOQS
 
@@ -211,7 +211,7 @@ cargo run --example authenticated_hybrid_handshake
 
 ### Hybrid Handshake API
 
-`oqs-safe v0.6.1` introduces a TLS-style hybrid handshake abstraction with transcript-bound session derivation.
+`oqs-safe v0.8.0` introduces a TLS-style hybrid handshake abstraction with transcript-bound session derivation.
 
 The API combines:
 
