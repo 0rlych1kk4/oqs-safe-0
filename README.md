@@ -24,6 +24,49 @@ It provides safe, minimal abstractions for:
 > Zeroizes secrets • Safe newtypes • Hybrid-ready • Migration-focused
 
 ---
+## PQC Migration Audit CLI
+
+`oqs-safe` includes an experimental CLI audit command for Rust projects that need post-quantum migration readiness checks.
+
+The audit command scans `Cargo.toml` and `Cargo.lock` for known classical public-key cryptography dependencies and produces a migration readiness report.
+
+```bash
+cargo run --features cli --bin oqs-safe -- audit .
+```
+
+Example output:
+
+```text
+PQC Migration Readiness Report
+
+Project: /path/to/project
+Status: REVIEW_REQUIRED
+
+Scanned files:
+- /path/to/project/Cargo.toml
+- /path/to/project/Cargo.lock
+
+Findings:
+- x25519-dalek
+  Category: classical-key-exchange
+  Severity: medium
+  Reason: X25519 is classical key exchange and should be hybridized for PQC migration.
+  Recommendation: Use hybrid X25519 + ML-KEM and bind the handshake transcript before deriving session keys.
+```
+
+JSON output is also supported:
+
+```bash
+cargo run --features cli --bin oqs-safe -- audit . --format json
+```
+
+CI usage:
+
+```bash
+cargo run --features cli --bin oqs-safe -- audit . --fail-on-findings
+```
+
+A finding does not necessarily mean the project is insecure. It means the dependency should be reviewed for post-quantum migration readiness, crypto inventory, and future migration planning.
 
 ##  Features
 
